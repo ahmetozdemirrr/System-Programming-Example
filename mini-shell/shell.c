@@ -8,7 +8,6 @@
 #define BUFFER_SIZE 100
 #define MAX_TOKENS 10
 #define TRUE 1
-#define PATH_MAX 1024
 
 const char * cmd1 = "ls";
 const char * cmd2 = "cd";
@@ -40,7 +39,6 @@ int cmdCompare(const char * command1, const char * command2)
 
     return (*command1 == '\0' && *command2 == '\0');
 }
-
 
 int cmdSize(const char * command)
 {
@@ -119,6 +117,13 @@ int main(int argc, char const *argv[])
 
 			else if (cmdCompare(tokens[0], cmd2))
 			{
+				size_t len = cmdSize(tokens[1]);
+
+				if (len > 0 && tokens[1][len - 1] == '\n') // cla'dan alınan \n'i ignore et
+				{
+					tokens[1][len - 1] = '\0';
+				}
+
 			    if (tokens[1] == NULL)
 			    {
 			        fprintf(stderr, "Too few arguments.\nUsage: cd <directory>\n");
@@ -126,39 +131,13 @@ int main(int argc, char const *argv[])
 
 			    else
 			    {
-			    	pid_t childPID = fork();
+			    	int flag = chdir(tokens[1]);
 
-				    if (childPID == -1)
-				    {
-				        perror("Fork");
-				        exit(EXIT_FAILURE);
-				    }
-
-				    if (childPID == 0)
-				    {
-				        if (chdir(tokens[1]) == -1 && tokens[1] != NULL)
-				        {
-						    fprintf(stderr, "chdir failed: %s\n", strerror(errno));
-						    fprintf(stderr, "Could not change to directory: %s\n", tokens[1]);
-						    exit(EXIT_FAILURE);
-				        }
-
-				        else
-				        {
-				        	exit(EXIT_SUCCESS);
-				        }
-				    }
-
-				    else
-				    {
-				        int status;
-				        wait(&status);
-
-				        if (WIFEXITED(status) && WEXITSTATUS(status) != 0 && tokens[1] != NULL)
-				        {
-				            fprintf(stderr, "Child process failed with exit status %d\n", WEXITSTATUS(status));
-				        }
-				    }
+			    	if (flag == -1 && tokens[1] != NULL)
+			        {
+					    fprintf(stderr, "chdir failed: %s\n", strerror(errno));
+					    fprintf(stderr, "Could not change to directory: %s\n", tokens[1]);
+			        }
 			    }
 			}
 
