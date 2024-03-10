@@ -1,9 +1,11 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <sys/types.h>
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <signal.h>
 
 #define BUFFER_SIZE 100
 #define MAX_TOKENS 10
@@ -51,12 +53,26 @@ int cmdSize(const char * command)
 	return i;
 }
 
+void signalHandler(int sigNo)
+{
+	if (sigNo == SIGTERM)
+	{
+		exit(EXIT_SUCCESS);
+	}
+}
+
 int main(int argc, char const *argv[])
 {
 	const char * message1 = "Shell> ";
 	const char * message2 = ": command not found\n";
 	char buffer[BUFFER_SIZE];
 	int messageFlag = 0;
+
+	if (signal(SIGTERM, signalHandler) == SIG_ERR)
+	{
+		perror("Register signal failed");
+		exit(EXIT_FAILURE);
+	}
 
 	while (TRUE) 
 	{
@@ -219,9 +235,11 @@ int main(int argc, char const *argv[])
 					char realTerminalPID[20];
 					snprintf(realTerminalPID, sizeof(realTerminalPID), "%d", getpid());
 
-					execlp("kill", "kill", "-15", realTerminalPID, NULL);
-		            perror("execlp failed");
-		            exit(EXIT_FAILURE);
+					if (kill(getpid(), SIGTERM) == -1) // Send SIGTERM signal directly
+					{
+						perror("Kill failed");
+						exit(EXIT_FAILURE);
+					}
 	        	}
 			}
 

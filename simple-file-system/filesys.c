@@ -11,7 +11,7 @@
 int main(int argc, char const *argv[])
 {
 	const char * message = "\nPlease enter a input : ";
-	const char * content = "Esmayı çok severim.\nEsmayı çok severim.\nEsmayı çok severim.\nEsmayı çok severim.\nEsmayı çok severim.\n";
+	const char * content = "Hello world!\nHello world!\nHello world!\nHello world!\nHello world!\nHello world!\nHello world!\n";
 	char buffer[BUFFER_SIZE]; //Buffer aç
 	char bufferInput[BUFFER_SIZE];
 
