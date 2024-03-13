@@ -28,6 +28,19 @@
     
     - **exit**: switches off the mini-shell.
 
+    - **cat**: Print the content of given file.
+
+    - **touch**: Create a new file.
+
+    - **subl**: Open given file in the Sublime Text.
+
+    - **mkdir**: Create a new directory.
+
+    - **rmdir**: If given directory is empty remove it.
+
+    - **rm**: Remove given file.
+
+
 ## Points to be Considered
 
 - mini-shell, supports basic shell commands.
