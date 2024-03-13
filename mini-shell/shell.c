@@ -6,7 +6,9 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <fcntl.h>
 
+#define CAT_BUFFER 10000
 #define BUFFER_SIZE 100
 #define MAX_TOKENS 10
 #define TRUE 1
@@ -16,6 +18,12 @@ const char * cmd2 = "cd";
 const char * cmd3 = "pwd";
 const char * cmd4 = "echo";
 const char * cmd5 = "exit";
+const char * cmd6 = "cat";
+const char * cmd7 = "touch";
+const char * cmd8 = "subl"; // This command may not work on all devices, the text editor I use when writing code is called sublime text and I normally open files there with this command.
+const char * cmd9 = "rmdir";
+const char * cmd10 = "mkdir";
+const char * cmd11 = "rm";
 
 int cmdCompare(const char * command1, const char * command2)
 {
@@ -143,6 +151,7 @@ int main(int argc, char const *argv[])
 			    if (tokens[1] == NULL)
 			    {
 			        fprintf(stderr, "Too few arguments.\nUsage: cd <directory>\n");
+			        exit(EXIT_FAILURE);
 			    }
 
 			    else
@@ -232,6 +241,8 @@ int main(int argc, char const *argv[])
 
 				else
 				{
+					kill(getppid(), 9);
+					/*
 					char realTerminalPID[20];
 					snprintf(realTerminalPID, sizeof(realTerminalPID), "%d", getpid());
 
@@ -240,14 +251,216 @@ int main(int argc, char const *argv[])
 						perror("Kill failed");
 						exit(EXIT_FAILURE);
 					}
+					*/
 	        	}
+			}
+
+			else if (cmdCompare(tokens[0], cmd6))
+			{
+				char buffer[CAT_BUFFER];
+
+				size_t len = cmdSize(tokens[1]);
+
+				if (len > 0 && tokens[1][len - 1] == '\n') // cla'dan alınan \n'i ignore et
+				{
+					tokens[1][len - 1] = '\0';
+				}
+
+				if (tokens[1] == NULL)
+				{
+					fprintf(stderr, "Too few arguments.\nUsage: cat <file name>\n");
+					exit(EXIT_FAILURE);
+				}
+
+				int filename = open(tokens[1], O_RDONLY); 
+
+				if (filename == -1)
+				{
+					perror("Cannot open file.\n");
+					exit(EXIT_FAILURE);
+				}
+
+				ssize_t byte;
+				lseek(filename, 0, SEEK_SET);
+
+				byte = read(filename, buffer, CAT_BUFFER);
+
+				if (byte == -1)
+				{
+					perror("Reading fail");
+					close(filename);
+					exit(EXIT_FAILURE);
+				}
+
+				else
+				{
+					ssize_t bytes_written = write(STDOUT_FILENO, buffer, byte);
+			        
+			        if (bytes_written == -1)
+			        {
+			            perror("Writing to STDOUT failed");
+			            close(filename);
+			            exit(EXIT_FAILURE);
+			        }
+				}
+				close(filename);
+			}
+
+			else if (cmdCompare(tokens[0], cmd7))
+			{
+				size_t len = cmdSize(tokens[1]);
+
+				if (len > 0 && tokens[1][len - 1] == '\n') // cla'dan alınan \n'i ignore et
+				{
+					tokens[1][len - 1] = '\0';
+				}
+
+				if (tokens[1] == NULL)
+				{
+					fprintf(stderr, "Too few arguments.\nUsage: touch <file name>\n");
+					exit(EXIT_FAILURE);
+				}
+
+				int filename = open(tokens[1], O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
+
+				if (filename == -1)
+				{
+					perror("Error creating a file");
+					exit(EXIT_FAILURE);
+				}
+			}
+
+			else if (cmdCompare(tokens[0], cmd8))
+			{
+				size_t len = cmdSize(tokens[1]);
+
+				if (len > 0 && tokens[1][len - 1] == '\n') // cla'dan alınan \n'i ignore et
+				{
+					tokens[1][len - 1] = '\0';
+				}
+
+				if (tokens[1] == NULL)
+				{
+					fprintf(stderr, "Too few arguments.\nUsage: touch <file name>\n");
+					exit(EXIT_FAILURE);
+				}
+
+				int filename = open(tokens[1], O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
+
+				if (filename == -1)
+				{
+					perror("Error creating a file");
+					exit(EXIT_FAILURE);
+				}
+
+				pid_t childPID = fork();
+
+				if (childPID == -1)
+				{
+					perror("fork");
+					exit(EXIT_FAILURE);
+				}
+
+				else if (childPID == 0)
+				{	
+					execlp("subl", "subl", tokens[1], NULL);
+					perror("execlp");
+					exit(EXIT_FAILURE);
+				}
+
+				else
+				{
+					wait(NULL);
+				}
+			}
+
+			else if (cmdCompare(tokens[0], cmd9))
+			{
+				pid_t childPID = fork();
+
+				if (childPID == -1)
+				{
+					perror("fork");
+					exit(EXIT_FAILURE);
+				}
+
+				else if (childPID == 0)
+				{
+					execlp("rmdir", "rmdir", tokens[1], NULL);
+					perror("execlp");
+					exit(EXIT_FAILURE);
+				}
+
+				else
+				{
+					wait(NULL);
+				}
+			}
+
+			else if (cmdCompare(tokens[0], cmd10))
+			{
+				size_t len = cmdSize(tokens[1]);
+
+				if (len > 0 && tokens[0][len - 1] == '\n') // cla'dan alınan \n'i ignore et
+				{
+					tokens[0][len - 1] = '\0';
+				}
+
+				pid_t childPID = fork();
+
+				if (childPID == -1)
+				{
+					perror("fork");
+					exit(EXIT_FAILURE);
+				}
+
+				else if (childPID == 0)
+				{
+					execlp("mkdir", "mkdir", tokens[1], NULL);
+					perror("execlp");
+					exit(EXIT_FAILURE);
+				}
+
+				else
+				{
+					wait(NULL);
+				}
+			}
+
+			else if (cmdCompare(tokens[0], cmd11))
+			{
+				pid_t childPID = fork();
+
+				if (childPID == -1)
+				{
+					perror("fork");
+					exit(EXIT_FAILURE);
+				}
+
+				else if (childPID == 0)
+				{
+					execlp("rm", "rm", tokens[1], NULL);
+					perror("execlp");
+					exit(EXIT_FAILURE);
+				}
+
+				else
+				{
+					wait(NULL);
+				}
 			}
 
 			else
 			{
 				if (cmdCompare(tokens[0], cmd5) == 0)
 				{
-					write(STDOUT_FILENO, tokens[0], cmdSize(tokens[0]) - 1); // -1 for last '\n' character
+					size_t len = cmdSize(tokens[1]);
+
+					if (len > 0 && tokens[0][len - 1] == '\n') // cla'dan alınan \n'i ignore et
+					{
+						tokens[0][len - 1] = '\0';
+					}
+					write(STDOUT_FILENO, tokens[0], cmdSize(tokens[0])); // -1 for last '\n' character
 					write(STDOUT_FILENO, message2, cmdSize(message2));
 				}
 			}
